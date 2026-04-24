@@ -140,3 +140,36 @@ def mount_workspaces(ip, login, senha, shares, os_type):
 
     except Exception as e:
         return 0, f"Erro crítico ao mapear: {str(e)}"
+
+def disconnect_all(os_type):
+    """
+    Desconecta todas as unidades de rede mapeadas.
+    Retorna uma tupla: (sucesso_boolean, mensagem)
+    """
+    try:
+        if os_type == "Darwin":
+            # O AppleScript abaixo ejeta todos os discos que não são volumes locais (ou seja, discos de rede)
+            cmd = ["osascript", "-e", 'tell application "Finder" to eject (every disk whose local volume is false)']
+            res = subprocess.run(cmd, capture_output=True, text=True)
+            if res.returncode == 0:
+                return True, "Todas as conexões de rede foram ejetadas do Mac."
+            else:
+                return False, f"Erro ao ejetar (Mac): {res.stderr.strip()}"
+                
+        elif os_type == "Windows":
+            # O comando do Windows abaixo força a exclusão de todos os mapeamentos de rede ativos
+            cmd = ["net", "use", "*", "/delete", "/y"]
+            res = subprocess.run(cmd, capture_output=True, text=True)
+            if res.returncode == 0:
+                return True, "Todas as unidades e conexões de rede foram desconectadas no Windows."
+            else:
+                error_msg = res.stderr.strip() or res.stdout.strip()
+                # Se não houver conexões, o Windows diz que a lista está vazia
+                if "Não há entradas na lista" in error_msg or "There are no entries in the list" in error_msg:
+                    return True, "Não havia nenhuma conexão de rede ativa para desconectar."
+                return False, f"Erro ao desconectar (Windows): {error_msg}"
+        else:
+            return False, f"OS não suportado: {os_type}"
+            
+    except Exception as e:
+        return False, f"Erro crítico ao tentar desconectar: {str(e)}"

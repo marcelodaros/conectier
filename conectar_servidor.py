@@ -47,6 +47,18 @@ class WorkerMountWorkspaces(QThread):
         self.finished.emit(success_count, error_str)
 
 
+class WorkerDisconnectAll(QThread):
+    finished = pyqtSignal(bool, str)  # success, message
+
+    def __init__(self, os_type):
+        super().__init__()
+        self.os_type = os_type
+
+    def run(self):
+        success, msg = core.disconnect_all(self.os_type)
+        self.finished.emit(success, msg)
+
+
 class AppWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -115,6 +127,13 @@ class AppWindow(QWidget):
         self.btn_mapear.setProperty('class', 'primary')
         self.btn_mapear.clicked.connect(self.on_map_click)
         main_layout.addWidget(self.btn_mapear)
+
+        # Disconnect All Button
+        self.btn_desconectar = QPushButton("DESCONECTAR TUDO")
+        self.btn_desconectar.setCursor(Qt.PointingHandCursor)
+        self.btn_desconectar.setProperty('class', 'danger')
+        self.btn_desconectar.clicked.connect(self.on_disconnect_click)
+        main_layout.addWidget(self.btn_desconectar)
 
         # Status Label
         self.lbl_status = QLabel("Pronto para conectar.")
@@ -197,6 +216,29 @@ class AppWindow(QWidget):
             QMessageBox.critical(self, "Erros no Mapeamento", msg)
         else:
             self.set_status(f"Sucesso! {success_count} pastas mapeadas.", "success")
+
+    def on_disconnect_click(self):
+        reply = QMessageBox.question(
+            self, "Confirmação", 
+            "Tem certeza que deseja ejetar e desconectar todas as unidades de rede ativas?",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+        )
+        if reply == QMessageBox.Yes:
+            self.set_status("Desconectando unidades...", "warning")
+            self.btn_desconectar.setEnabled(False)
+            
+            self.worker_disconnect = WorkerDisconnectAll(self.os_type)
+            self.worker_disconnect.finished.connect(self.on_disconnect_finished)
+            self.worker_disconnect.start()
+
+    def on_disconnect_finished(self, success, msg):
+        self.btn_desconectar.setEnabled(True)
+        if success:
+            self.set_status(msg, "success")
+            QMessageBox.information(self, "Desconectado", msg)
+        else:
+            self.set_status("Erro ao desconectar.", "danger")
+            QMessageBox.critical(self, "Erro", msg)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
