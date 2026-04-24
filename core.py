@@ -12,7 +12,8 @@ def list_workspaces(ip, login, senha, os_type):
             result = subprocess.run(cmd, capture_output=True, text=True)
             
             if result.returncode != 0:
-                return False, [], "Falha na conexão (Verifique as credenciais ou o endereço)."
+                error_msg = result.stderr.strip() or result.stdout.strip()
+                return False, [], f"Falha na conexão (Mac): {error_msg}"
             
             lines = result.stdout.splitlines()
             start_parsing = False
@@ -34,7 +35,8 @@ def list_workspaces(ip, login, senha, os_type):
             auth_result = subprocess.run(auth_cmd, capture_output=True, text=True)
             
             if auth_result.returncode != 0:
-                return False, [], "Falha na conexão (Verifique as credenciais ou o endereço)."
+                error_msg = auth_result.stderr.strip() or auth_result.stdout.strip()
+                return False, [], f"Falha na conexão (Autenticação Windows): {error_msg}"
                 
             # Listar shares
             view_cmd = ["net", "view", f"\\\\{ip}"]
