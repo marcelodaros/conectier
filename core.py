@@ -30,13 +30,29 @@ def list_workspaces(ip, login, senha, os_type):
                             shares.append(share_name)
                             
         elif os_type == "Windows":
-            # Autenticar primeiro
             auth_cmd = ["net", "use", f"\\\\{ip}\\IPC$", senha, f"/user:{login}"]
             auth_result = subprocess.run(auth_cmd, capture_output=True, text=True)
             
             if auth_result.returncode != 0:
                 error_msg = auth_result.stderr.strip() or auth_result.stdout.strip()
-                return False, [], f"Falha na conexão (Autenticação Windows): {error_msg}"
+                
+                # Se for erro 1219 (múltiplas conexões com usuários diferentes)
+                if "1219" in error_msg:
+                    # Tenta desconectar a sessão fantasma anterior e tentar de novo
+                    subprocess.run(["net", "use", f"\\\\{ip}\\IPC$", "/delete", "/y"], capture_output=True)
+                    subprocess.run(["net", "use", f"\\\\{ip}", "/delete", "/y"], capture_output=True)
+                    
+                    auth_result = subprocess.run(auth_cmd, capture_output=True, text=True)
+                    
+                    if auth_result.returncode != 0:
+                        return False, [], (
+                            "Erro 1219 (Conexão Bloqueada pelo Windows).\n"
+                            "Você já possui pastas deste servidor abertas ou mapeadas com outro usuário.\n"
+                            "Solução: Feche as pastas, desconecte as unidades de rede atuais deste servidor "
+                            "no 'Meu Computador' e tente novamente."
+                        )
+                else:
+                    return False, [], f"Falha na conexão (Autenticação Windows):\n{error_msg}"
                 
             # Listar shares
             view_cmd = ["net", "view", f"\\\\{ip}"]
