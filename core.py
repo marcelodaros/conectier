@@ -31,14 +31,14 @@ def list_workspaces(ip, login, senha, os_type):
         elif os_type == "Windows":
             # Autenticar primeiro
             auth_cmd = ["net", "use", f"\\\\{ip}\\IPC$", senha, f"/user:{login}"]
-            auth_result = subprocess.run(auth_cmd, capture_output=True, text=True, shell=True)
+            auth_result = subprocess.run(auth_cmd, capture_output=True, text=True)
             
             if auth_result.returncode != 0:
                 return False, [], "Falha na conexão (Verifique as credenciais ou o endereço)."
                 
             # Listar shares
             view_cmd = ["net", "view", f"\\\\{ip}"]
-            view_result = subprocess.run(view_cmd, capture_output=True, text=True, shell=True)
+            view_result = subprocess.run(view_cmd, capture_output=True, text=True)
             
             lines = view_result.stdout.splitlines()
             start_parsing = False
@@ -110,7 +110,7 @@ def mount_workspaces(ip, login, senha, shares, os_type):
                     continue
                 
                 cmd = ["net", "use", letter, rf"\\{ip}\{share}", senha, f"/user:{login}"]
-                res = subprocess.run(cmd, capture_output=True, text=True, shell=True)
+                res = subprocess.run(cmd, capture_output=True, text=True)
                 
                 if res.returncode == 0:
                     success_count += 1
