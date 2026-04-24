@@ -66,7 +66,7 @@ class AppWindow(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle("Conectar Workspaces")
+        self.setWindowTitle("Conectier")
         self.resize(450, 600)
         
         main_layout = QVBoxLayout()
@@ -74,7 +74,7 @@ class AppWindow(QWidget):
         main_layout.setSpacing(15)
 
         # Title
-        title_label = QLabel("Workspaces de Rede")
+        title_label = QLabel("Conectier")
         title_label.setStyleSheet("font-size: 20px; font-weight: bold;")
         title_label.setAlignment(Qt.AlignCenter)
         main_layout.addWidget(title_label)
