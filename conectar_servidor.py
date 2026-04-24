@@ -74,7 +74,7 @@ class AppWindow(QWidget):
         main_layout.setSpacing(15)
 
         # Title
-        title_label = QLabel("Conectier")
+        title_label = QLabel("Conectier\nConecte-se aos servidores")
         title_label.setStyleSheet("font-size: 20px; font-weight: bold;")
         title_label.setAlignment(Qt.AlignCenter)
         main_layout.addWidget(title_label)
@@ -86,19 +86,25 @@ class AppWindow(QWidget):
         input_layout.setSpacing(10)
 
         # IP
-        input_layout.addWidget(QLabel("Endereço IP ou Hostname do Servidor"))
+        lbl_ip = QLabel("Endereço IP ou Hostname do Servidor")
+        lbl_ip.setStyleSheet("color: #b0b0b0;")
+        input_layout.addWidget(lbl_ip)
         self.entry_ip = QLineEdit()
         self.entry_ip.setPlaceholderText("Ex: 192.168.1.100")
         input_layout.addWidget(self.entry_ip)
 
         # Login
-        input_layout.addWidget(QLabel("Usuário de Rede"))
+        lbl_login = QLabel("Usuário de Rede")
+        lbl_login.setStyleSheet("color: #b0b0b0;")
+        input_layout.addWidget(lbl_login)
         self.entry_login = QLineEdit()
         self.entry_login.setPlaceholderText("Seu nome de usuário")
         input_layout.addWidget(self.entry_login)
 
         # Password
-        input_layout.addWidget(QLabel("Senha"))
+        lbl_senha = QLabel("Senha")
+        lbl_senha.setStyleSheet("color: #b0b0b0;")
+        input_layout.addWidget(lbl_senha)
         self.entry_senha = QLineEdit()
         self.entry_senha.setEchoMode(QLineEdit.Password)
         self.entry_senha.setPlaceholderText("Sua senha")
@@ -115,7 +121,9 @@ class AppWindow(QWidget):
         main_layout.addWidget(self.btn_conectar)
 
         # Listbox for shares
-        main_layout.addWidget(QLabel("Compartilhamentos Disponíveis (Selecione os que deseja mapear):"))
+        lbl_shares = QLabel("Compartilhamentos Disponíveis (Selecione os que deseja mapear):")
+        lbl_shares.setStyleSheet("color: #b0b0b0;")
+        main_layout.addWidget(lbl_shares)
         self.listbox_shares = QListWidget()
         self.listbox_shares.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.listbox_shares.setStyleSheet("font-size: 14px;")
@@ -243,9 +251,10 @@ class AppWindow(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     
-    # Evitar o warning da fonte Roboto ausente no macOS/Windows
+    # Evitar o warning da fonte Roboto ausente no macOS/Windows e aumentar a fonte
     extra = {
         'font_family': 'Helvetica Neue' if platform.system() == 'Darwin' else 'Arial',
+        'font_size': '16px',
     }
     
     # Aplica o tema Material Design Dark
