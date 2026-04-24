@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                              QLabel, QLineEdit, QPushButton, QListWidget,
                              QAbstractItemView, QMessageBox, QFrame, QSizePolicy)
 from PyQt5.QtCore import QThread, pyqtSignal, Qt
-from PyQt5.QtGui import QFontDatabase, QFont, QPalette, QColor
+from PyQt5.QtGui import QFontDatabase, QFont
 
 # qt_material deve ser importado após os componentes do PyQt
 from qt_material import apply_stylesheet
@@ -91,11 +91,7 @@ class AppWindow(QWidget):
         input_layout.addWidget(lbl_ip)
         self.entry_ip = QLineEdit()
         self.entry_ip.setPlaceholderText("Ex: 192.168.1.100")
-        
-        # Ajusta a cor do placeholder via Paleta (compatível com PyQt5)
-        pal = self.entry_ip.palette()
-        pal.setColor(QPalette.PlaceholderText, QColor("#a0a0a0"))
-        self.entry_ip.setPalette(pal)
+        self.entry_ip.setStyleSheet("color: #a0a0a0;")
         
         input_layout.addWidget(self.entry_ip)
 
@@ -105,9 +101,7 @@ class AppWindow(QWidget):
         input_layout.addWidget(lbl_login)
         self.entry_login = QLineEdit()
         self.entry_login.setPlaceholderText("Seu nome de usuário")
-        pal2 = self.entry_login.palette()
-        pal2.setColor(QPalette.PlaceholderText, QColor("#a0a0a0"))
-        self.entry_login.setPalette(pal2)
+        self.entry_login.setStyleSheet("color: #a0a0a0;")
         input_layout.addWidget(self.entry_login)
 
         # Password
@@ -117,9 +111,7 @@ class AppWindow(QWidget):
         self.entry_senha = QLineEdit()
         self.entry_senha.setEchoMode(QLineEdit.Password)
         self.entry_senha.setPlaceholderText("Sua senha")
-        pal3 = self.entry_senha.palette()
-        pal3.setColor(QPalette.PlaceholderText, QColor("#a0a0a0"))
-        self.entry_senha.setPalette(pal3)
+        self.entry_senha.setStyleSheet("color: #a0a0a0;")
         input_layout.addWidget(self.entry_senha)
 
         main_layout.addWidget(input_frame)
