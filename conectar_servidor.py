@@ -242,4 +242,4 @@ async def main(page: ft.Page):
     btn_desconectar.on_click = btn_desconectar_click
 
 if __name__ == "__main__":
-    ft.run(main, assets_dir=".")
+    ft.app(target=main, assets_dir=".")
