@@ -56,6 +56,35 @@ def list_workspaces(ip, login, senha):
         return False, [], f"Erro interno: {str(e)}"
 
 
+def _get_network_drive_letters():
+    """
+    Returns a dict mapping drive letters (e.g. 'Z:') to their remote UNC paths
+    for all currently mapped network drives (including disconnected persistent ones).
+    Uses 'net use' output.
+    """
+    net_drives = {}
+    try:
+        res = subprocess.run(["net", "use"], capture_output=True, text=True)
+        for line in res.stdout.splitlines():
+            # Lines look like: "OK  Z:  \\server\share  Microsoft Windows Network"
+            # or "Unavailable  Z:  \\server\share  ..."
+            parts = line.split()
+            if len(parts) >= 3:
+                # Find a token that looks like a drive letter (e.g. 'Z:')
+                for i, token in enumerate(parts):
+                    if len(token) == 2 and token[0].isalpha() and token[1] == ':':
+                        letter = token.upper()
+                        # The UNC path usually follows the letter
+                        if i + 1 < len(parts) and parts[i + 1].startswith("\\\\"):
+                            net_drives[letter] = parts[i + 1]
+                        else:
+                            net_drives[letter] = ""
+                        break
+    except Exception:
+        pass
+    return net_drives
+
+
 def mount_workspaces(ip, login, senha, shares):
     """
     Returns a tuple: (success_count, string_with_errors)
@@ -64,6 +93,22 @@ def mount_workspaces(ip, login, senha, shares):
     errors = []
     
     try:
+        # Formata o login para incluir o IP se não houver domínio, essencial para o Windows salvar corretamente
+        user_for_cmdkey = login
+        if "\\" not in login and "@" not in login:
+            user_for_cmdkey = f"{ip}\\{login}"
+
+        # Salva as credenciais no Windows Credential Manager.
+        # O target deve usar o prefixo UNC (\\ip) para que o Windows encontre a credencial
+        # ao reconectar as unidades persistentes após reiniciar.
+        subprocess.run(
+            ["cmdkey", f"/add:\\\\{ip}", f"/user:{user_for_cmdkey}", f"/pass:{senha}"],
+            capture_output=True
+        )
+
+        # Obtém as unidades de rede já mapeadas (incluindo as desconectadas/persistentes)
+        network_drives = _get_network_drive_letters()
+
         for share in shares:
             txt_path = rf"\\{ip}\{share}\win_letter.txt"
             letter = None
@@ -88,12 +133,27 @@ def mount_workspaces(ip, login, senha, shares):
                 errors.append(f"{share}: Arquivo win_letter.txt não contém uma letra de unidade válida (ex: Z).")
                 continue
             
-            # Verifica se a letra já está em uso localmente
-            if os.path.exists(letter + "\\"):
-                errors.append(f"{share}: A letra da unidade {letter} já está em uso no seu computador.")
+            # Verifica se a letra está em uso:
+            # - Se for uma unidade de REDE apontando para este mesmo servidor, remove e remapeia.
+            # - Se for uma unidade de REDE de outro servidor, reporta conflito.
+            # - Se for uma unidade LOCAL (não está na lista de rede mas existe no sistema), aborta.
+            if letter in network_drives:
+                existing_unc = network_drives[letter]
+                if existing_unc.lower().startswith(f"\\\\{ip.lower()}"):
+                    # Mesma origem: remove o mapeamento antigo para remontar limpo
+                    subprocess.run(["net", "use", letter, "/delete", "/y"], capture_output=True)
+                else:
+                    errors.append(
+                        f"{share}: A letra {letter} já está em uso por outra unidade de rede ({existing_unc})."
+                    )
+                    continue
+            elif os.path.exists(letter + "\\"):
+                # A letra existe no sistema mas não é uma unidade de rede: é local → não mapear
+                errors.append(f"{share}: A letra da unidade {letter} já está em uso por uma unidade local.")
                 continue
             
-            cmd = ["net", "use", letter, rf"\\{ip}\{share}", senha, f"/user:{login}"]
+            # Mapeia a unidade. As credenciais serão buscadas no Credential Manager no reboot.
+            cmd = ["net", "use", letter, rf"\\{ip}\{share}", "/persistent:yes"]
             res = subprocess.run(cmd, capture_output=True, text=True)
             
             if res.returncode == 0:
