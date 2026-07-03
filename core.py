@@ -99,12 +99,20 @@ def mount_workspaces(ip, login, senha, shares):
             user_for_cmdkey = f"{ip}\\{login}"
 
         # Salva as credenciais no Windows Credential Manager.
-        # O target deve usar o prefixo UNC (\\ip) para que o Windows encontre a credencial
-        # ao reconectar as unidades persistentes após reiniciar.
-        subprocess.run(
-            ["cmdkey", f"/add:\\\\{ip}", f"/user:{user_for_cmdkey}", f"/pass:{senha}"],
-            capture_output=True
+        # O target deve ser o IP puro (sem prefixo \\): cmdkey rejeita "\\ip"
+        # com "The parameter is incorrect" em algumas builds do Windows.
+        # O Windows resolve a credencial pelo nome do servidor ao reconectar
+        # as unidades persistentes após reiniciar.
+        cmdkey_res = subprocess.run(
+            ["cmdkey", f"/add:{ip}", f"/user:{user_for_cmdkey}", f"/pass:{senha}"],
+            capture_output=True, text=True
         )
+        if cmdkey_res.returncode != 0:
+            err = cmdkey_res.stderr.strip() or cmdkey_res.stdout.strip() or f"codigo {cmdkey_res.returncode}"
+            errors.append(
+                f"Falha ao salvar credenciais no Windows Credential Manager: {err}. "
+                "A reconexão após reinicialização pode não funcionar."
+            )
 
         # Obtém as unidades de rede já mapeadas (incluindo as desconectadas/persistentes)
         network_drives = _get_network_drive_letters()
