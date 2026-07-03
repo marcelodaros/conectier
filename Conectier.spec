@@ -1,11 +1,14 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from PyInstaller.utils.hooks import collect_data_files
+
+flet_datas = collect_data_files('flet', subdir='controls')
 
 a = Analysis(
     ['conectar_servidor.py'],
     pathex=[],
     binaries=[],
-    datas=[('icon.png', '.')],
+    datas=[('icon.png', '.')] + flet_datas,
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,6 +38,6 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    version='C:\\Users\\User\\AppData\\Local\\Temp\\ab8780bf-1280-4873-a44d-714f19fc712b',
+    version='version_info.txt',
     icon=['icon.ico'],
 )
